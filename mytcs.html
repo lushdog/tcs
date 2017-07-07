@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>贪吃蛇小游戏</title>
+    <style type="text/css" media="screen">
+        #drawing{
+            border:1px solid red;
+            margin: 10px 300px;
+        }
+        #score{
+            position: absolute;
+            top: 30px;
+            left:320px;
+            font-size:20px;
+            color: red;
+            font-family:微软雅黑;
+        }
+        #score>span{
+            color:blue;
+            font-size:30px;
+        }
+        #rePlay{
+            position: absolute;
+            display:none;
+            top: 290px;
+            left:480px;
+            font-family: Georgia;
+            color: #fff;
+            font-size: 30px;
+            padding: 12px;
+            cursor: pointer;
+            -webkit-border-radius: 28px;
+            -moz-border-radius: 28px;
+            border-radius: 20px;
+            -webkit-box-shadow: 7px 4px 7px #1f0f1f;
+            -moz-box-shadow: 7px 4px 7px #1f0f1f;
+            box-shadow: 7px 4px 7px #1f0f1f;
+            text-shadow: 7px 1px 3px #915a91;
+            border: solid #6b5961 2px;
+            background: -webkit-gradient(linear, 0 0, 0 100%, from(#e8438d), to(#a13566));
+            background: -moz-linear-gradient(top, #e8438d, #a13566);
+        }
+        #rePlay:hover {
+              background: #e62097;
+        }
+    </style>
+   <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+</head>
+<body>
+    <canvas id="drawing" width="500" height="500">
+        A drawing of something.
+    </canvas>
+    <div id="score">
+        你的成绩为：
+        <span>0</span>
+    </div>
+    <div id="rePlay">
+        再来一次
+    </div>
+<script type="text/javascript">
+    //！！方向！！ 1 = up , 2 = right ,3 = down , 4 = left
+    //主程序
+    $(function () {
+    Game.play()
+    $('#rePlay').click(function (event) {
+        $(this).hide()
+        $("#score span").html('0')
+        Game.play()
+    })
+})
+
+
+    var ctx = document.getElementById("drawing").getContext("2d")
+    var blockSize = 10
+    var score = 0
+    var gameDirection
+    var length = 0
+    var snake, apple, timer, col, row
+        //Apple类
+    class Apple {
+        constructor(col, row) {
+            this.col = col
+            this.row = row
+            this.ctx = ctx
+        }
+        drawApple(col, row) {
+            this.ctx.fillStyle = 'red'
+            this.ctx.fillRect(col, row, 10, 10)
+            this.col = col
+            this.row = row
+        }
+        drawSquare() {
+            this.ctx.fillStyle = '#000'
+            this.ctx.fillRect(this.col, this.row, 10, 10)
+        }
+        randPosition() {
+            return (Math.floor(Math.random() * (48 - 1) + 1) + 1) * 10
+        }
+    }
+    //Snake类
+    class Snake {
+        constructor() {
+            this.segments = [
+               new Apple(250, 250),
+               new Apple(240, 250),
+               new Apple(230, 250)
+            ]
+            this.direction = 4
+            this.gameDirection = 4
+            this.ctx = ctx
+        }
+        draw() {
+            apple = new Apple()
+            this.ctx.clearRect(10, 10, 480, 480)
+            if (this.segments.length != length) {
+                do {
+                    var flag = false
+                    col = apple.randPosition()
+                    row = apple.randPosition()
+                    console.log(col);
+                    for (let i = 0; i < this.segments.length; i++) {
+                        if (this.segments[i].col == col && this.segments[i].row == row) {
+                            flag = true
+                            break
+                        }
+                    }
+                } while (flag)
+            }
+            apple.drawApple(col, row)
+            length = this.segments.length
+            this.move()
+            for (let i = 0; i < this.segments.length; i++) {
+                this.segments[i].drawSquare()
+            }
+        }
+        move() {
+            var head = this.segments[0]
+            if (this.gameDirection) {
+                if (this.gameDirection + this.direction == 4 || this.gameDirection + this.direction == 6) {
+
+                } else {
+                    this.direction = this.gameDirection
+                }
+            } else {
+                this.direction = this.nextDirection
+            }
+            this.gameDirection = 0
+            var xMove = 0
+            var yMove = 0
+            switch (this.direction) {
+            case 2:
+                xMove = 10;
+                break;
+            case 4:
+                xMove = -10;
+                break;
+            case 1:
+                yMove = -10;
+                break;
+            case 3:
+                yMove = 10;
+            }
+            var block = new Apple(head.col + xMove, head.row + yMove)
+            for (let i = 0; i < this.segments.length; i++) {
+                if (this.segments[i].col == block.col && this.segments[i].row == block.row) {
+                    var eatSelf = true
+                    console.log(this.segments[1].col);
+                    break
+                }
+            }
+            if (block.col < 10 || block.col > 480 || block.row < 10 || block.row > 480) {
+                ctx.fillStyle = "red"
+                ctx.textAlign = "center"
+                ctx.textBaseLine = "middle"
+                ctx.font = "bold 65px Arial"
+                ctx.fillText("Game Over", 250, 250);
+                $('#rePlay').slideDown(100)
+                clearInterval(timer)
+                return
+            }
+            this.segments.unshift(block)
+            this.nextDirection = this.direction
+            if (apple.col == block.col && apple.row == block.row) {
+                score++;
+                $("#score span").html(score);
+                return;
+            }
+            this.segments.pop();
+            return
+        }
+
+    }
+    //Game类
+    class Game {
+        constructor() {
+            this.name = '贪吃蛇小游戏'
+            this.version = '1.0'
+            this.ctx = ctx
+        }
+        static play() {
+            var snake = new Snake()
+            ctx.clearRect(0, 0, 500, 500)
+            ctx.fillStyle = 'gray'
+            ctx.fillRect(0, 0, 500, 500)
+            ctx.fillStyle = '#fff'
+            ctx.fillRect(10, 10, 480, 480)
+            timer = setInterval(function () {
+                snake.draw()
+            }, 100)
+
+            $("body").keydown(function (event) {
+                var code = event.keyCode
+                if (code == 37 || code == 38 || code == 39 || code == 40) {
+                    switch (code) {
+                    case 37:
+                        snake.gameDirection = 4;
+                        break
+                    case 38:
+                        snake.gameDirection = 1;
+                        break
+                    case 39:
+                        snake.gameDirection = 2;
+                        break
+                    case 40:
+                        snake.gameDirection = 3
+                        break
+                    }
+                    return
+                } else {
+                    return
+                }
+            })
+        }
+    }
+</script>
+</body>
+</html>
